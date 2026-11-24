@@ -1,8 +1,10 @@
 FROM eclipse-temurin:17-jdk-jammy
 
 RUN apt-get update && apt-get install -y \
-    xvfb x11vnc fluxbox novnc websockify \
+    xvfb x11vnc fluxbox novnc websockify x11-xserver-utils \
     && rm -rf /var/lib/apt/lists/*
+
+ENV DISPLAY=:1
 
 WORKDIR /app
 COPY . /app
@@ -14,11 +16,16 @@ CMD bash -c "\
   rm -f /tmp/.X1-lock && \
   Xvfb :1 -screen 0 1280x800x24 -ac +extension GLX +render -noreset & \
   sleep 2 && \
-  export DISPLAY=:1 && \
-  fluxbox & \
+  DISPLAY=:1 xsetroot -solid '#1e293b' && \
+  DISPLAY=:1 fluxbox & \
   sleep 1 && \
-  x11vnc -display :1 -nopw -listen 0.0.0.0 -xkb -forever -shared & \
+  x11vnc -display :1 -nopw -listen 0.0.0.0 -xkb -forever -shared -noxdamage & \
   sleep 1 && \
-  (while true; do java -cp 'out:lib/*:*' LoginFrame || java -cp 'out:lib/*:*' $(find out -name 'LoginFrame.class' | sed 's|^out/||;s|\.class$||;s|/|.|g'); sleep 3; done) & \
+  (while true; do \
+    MAIN_CLASS=\$(find out -name 'LoginFrame.class' | head -n 1 | sed 's|^out/||;s|\.class\$||;s|/|.|g'); \
+    echo \"Launching \$MAIN_CLASS on DISPLAY=:1...\"; \
+    DISPLAY=:1 java -Djava.awt.headless=false -Dsun.java2d.xrender=false -cp 'out:lib/*:*' \"\$MAIN_CLASS\"; \
+    sleep 3; \
+  done) & \
   exec websockify --web=/usr/share/novnc/ 0.0.0.0:${PORT:-10000} localhost:5900 \
 "
