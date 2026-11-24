@@ -2,7 +2,8 @@ FROM eclipse-temurin:17-jdk-jammy
 
 RUN apt-get update && apt-get install -y \
     xvfb x11vnc fluxbox novnc websockify x11-xserver-utils \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && printf '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/vnc.html?autoconnect=true&resize=remote"></head></html>' > /usr/share/novnc/index.html
 
 ENV DISPLAY=:1
 
@@ -23,7 +24,6 @@ CMD bash -c "\
   sleep 1 && \
   (while true; do \
     MAIN_CLASS=\$(find out -name 'LoginFrame.class' | head -n 1 | sed 's|^out/||;s|\.class\$||;s|/|.|g'); \
-    echo \"Launching \$MAIN_CLASS on DISPLAY=:1...\"; \
     DISPLAY=:1 java -Djava.awt.headless=false -Dsun.java2d.xrender=false -cp 'out:lib/*:*' \"\$MAIN_CLASS\"; \
     sleep 3; \
   done) & \
