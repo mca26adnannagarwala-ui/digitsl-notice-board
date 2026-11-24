@@ -19,6 +19,6 @@ CMD bash -c "\
   sleep 1 && \
   x11vnc -display :1 -nopw -listen 0.0.0.0 -xkb -forever -shared & \
   sleep 1 && \
-  websockify --web=/usr/share/novnc/ ${PORT:-10000} localhost:5900 & \
-  java -cp 'out:lib/*:*' LoginFrame \
+  (while true; do java -cp 'out:lib/*:*' LoginFrame || java -cp 'out:lib/*:*' $(find out -name 'LoginFrame.class' | sed 's|^out/||;s|\.class$||;s|/|.|g'); sleep 3; done) & \
+  exec websockify --web=/usr/share/novnc/ 0.0.0.0:${PORT:-10000} localhost:5900 \
 "
